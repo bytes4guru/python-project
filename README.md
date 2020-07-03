@@ -8,4 +8,4 @@ Demonstrating my skills and abilities with Python using design patterns, Tkinter
 - Setting breakpoints and utilizing the PyDev debugger
 - Translating classic design patterns into Python 3.6 with a fun, terminal-based maze game
 - Creating a GUI weather application with Tkinter with API functionality
-- Writingwrite a Python Windows service that uses a scheduling mechanism to send out emails at set times
+- Writing a Python Windows service that uses a scheduling mechanism to send out emails at set times

@@ -1,3 +1,11 @@
+# sudo apt install python3-pip
+
+# Install pydev from marketplace
+
+# Window > Perspective > Open Perspective > Other... 
+
+# New > PyDev Project > Grammar Version 3.6 > Set Up Intepreter 
+
 # "enum", or enumeration, allows names to be directly assigned
 # to numbers underneath the hood.
 from enum import Enum
@@ -83,3 +91,56 @@ class MazeGame():
         r2.SetSide(Direction(3).value, theDoor)
         
         return aMaze
+        
+
+#===================================================
+# Self-testing Section    
+#===================================================
+if __name__ == '__main__':
+#     map_site_inst = MapSite()
+#     map_site_inst.Enter()
+    
+    print('*' * 21)
+    print('*** The Maze Game ***')
+    print('*' * 21)
+    
+    # Create the Maze
+    maze_obj = MazeGame().CreateMaze()
+
+    # Find the maze rooms
+    maze_rooms = []
+    for room_number in range(5):
+        try: 
+            # Get the room number
+            room = maze_obj.RoomNo(room_number)
+            print('\n^^^ Maze has room: {}'.format(room_number, room))
+            print('    Entering the room...')
+            room.Enter()
+            # Append rooms to list
+            maze_rooms.append(room)
+            # Room MUST have four sides
+            for idx in range(4):
+                side = room.GetSide(idx) 
+                side_str = str(side.__class__).replace("<class '__main__.", "").replace("'>", "")  
+                print('    Room: {}, {:<15s}, Type: {}'.format(room_number, Direction(idx), side_str))
+                print('    Trying to enter: ', Direction(idx))
+                # Attempt to open up one of the sides/walls
+                side.Enter()
+                if 'Door' in side_str:
+                    door = side                    
+                    if not door._isOpen:
+                        print('    *** Opening the door...')
+                        door._isOpen = True
+                        door.Enter()
+                    print('\t', door)                    
+                    # Get the room on the other side of the door
+                    other_room = door.OtherSideFrom(room)
+                    print('\tOn the other side of the door is Room: {}\n'.format(other_room._roomNumber))                    
+            
+        except KeyError:
+            print('No room:', room_number)
+    num_of_rooms = len(maze_rooms)
+    print('\nThere are {} rooms in the Maze.'.format(num_of_rooms))
+    
+    print('Both doors are the same object and they are on the East and West side of the two rooms.')
+
