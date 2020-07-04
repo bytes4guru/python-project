@@ -24,7 +24,9 @@ class Room(MapSite):
     def __init__(self, roomNo):
         self._sides = [MapSite] * 4
         self._roomNumber = int(roomNo)
-        
+        print('Room: ', self._roomNumber)
+        print('Room is of Type: ', self.__class__)
+                
     def GetSide(self, Direction):
         return self._sides[Direction]
     
@@ -58,22 +60,17 @@ class Door(MapSite):
 
 class Maze():
     def __init__(self):
-        # Dictionary to hold room_number, room_obj <key, value> pairs
+        # dictionary to hold room_number, room_obj <key, value> pairs
         self._rooms = {}
     
     def AddRoom(self, room):
-        # Use roomNumber as lookup value to retrieve room object
+        # use roomNumber as lookup value to retrieve room object
         self._rooms[room._roomNumber] = room    
     
     def RoomNo(self, room_number):
         return self._rooms[room_number]
     
-# Using the abstract factory design pattern now enables
-# the program to easily create different kinds of mazes.
     
-# Note: Does not instantiate the class, 
-# instead, just uses the class to call those methods, 
-# and those methods will create our factory.
 class MazeFactory():   
     @classmethod            # decorator
     def MakeMaze(cls):      # cls, not self
@@ -87,14 +84,72 @@ class MazeFactory():
     def MakeRoom(cls, n):   # n = roomNumber
         return Room(n)
         
+    @classmethod                # decorator
+    def MakeDoor(cls, r1, r2):  # r1, r2 = two rooms
+        return Door(r1, r2)     # door between rooms
+
+
+# Extend MazeFactory
+class EnchantedMazeFactory(MazeFactory):        
     @classmethod            # decorator
-    def MakeDoor(cls, r1, r2):
-        return Door(r1, r2)
+    def MakeRoom(cls, n):   # n = roomNumber
+        return EnchantedRoom(n, cls.CastSpell())    # pass in roomNo, create a spell      
+        
+    @classmethod                # decorator
+    def MakeDoor(cls, r1, r2):  # r1, r2 = two rooms
+        return DoorNeedingSpell(r1, r2)     # door between rooms
     
+    @classmethod
+    def CastSpell(cls):
+        return Spell()  
     
+
+class EnchantedRoom(Room):
+    def __init__(self, roomNo, aSpell):
+        super(EnchantedRoom, self).__init__(roomNo)
+        print('The spell is: ', aSpell)
+        
+class Spell():    
+    def __repr__(self):                 # overwrite string representation
+        return '"A hard-coded spell"'
+
+class DoorNeedingSpell(Door):    
+    def __init__(self, r1, r2):
+        super(DoorNeedingSpell, self).__init__(r1, r2)
+        self.spell = Spell()
+
+    def Enter(self):
+        print('    + This door needs a Spell...', self.spell)
+        if self._isOpen: print('    **** You have passed through this door...')
+        else: print('    ** This door needs to be opened before you can pass through it...')
+
+    
+# Extend MazeFactory
+class BombedMazeFactory(MazeFactory):
+    @classmethod            # decorator
+    def MakeWall(cls): 
+        return BombedWall()
+       
+    @classmethod            # decorator
+    def MakeRoom(cls, n):   # n = roomNumber
+        return RoomWithABomb(n)    # pass in roomNo, create a spell
+
+
+class BombedWall(Wall):
+    def __init__(self):
+        self.wall_is_damaged = False    # True if bomb exploded
+
+
+class RoomWithABomb(Room):
+    def __init__(self, roomNo):
+        super(RoomWithABomb, self).__init__(roomNo)
+        self.has_bomb = True
+        self.bomb_exploded = False
+        
+
 class MazeGame():   
     # Abstract Factory
-    def CreateMaze(self, factory=MazeFactory):
+    def CreateMaze(self, factory=MazeFactory):  # pass in a concrete Factory
         aMaze = factory.MakeMaze()
         r1 = factory.MakeRoom(1)
         r2 = factory.MakeRoom(2)
@@ -116,21 +171,22 @@ class MazeGame():
         return aMaze
     
 #==================================================================
-# Self-testing Section    
+# Self-testing section    
 #==================================================================
 if __name__ == '__main__':
-    # Common code moved into function
+    # common code moved into function
     def find_maze_rooms(maze_obj):      # pass object into function
-        # Find its rooms
+        print()
+        # find its rooms
         maze_rooms = []
         for room_number in range(5):
             try: 
-                # Get the room number
+                # get the room number
                 room = maze_obj.RoomNo(room_number)
                 print('\n^^^ Maze has room: {}'.format(room_number, room))
                 print('    Entering the room...')
                 room.Enter()
-                # Append rooms to list
+                # append rooms to list
                 maze_rooms.append(room)
                 for idx in range(4):
                     side = room.GetSide(idx) 
@@ -145,7 +201,7 @@ if __name__ == '__main__':
                             door._isOpen = True
                             door.Enter()
                         print('\t', door)                    
-                        # Get the room on the other side of the door
+                        # get the room on the other side of the door
                         other_room = door.OtherSideFrom(room)
                         print('\tOn the other side of the door is Room: {}\n'.format(other_room._roomNumber))                    
                 
@@ -156,16 +212,31 @@ if __name__ == '__main__':
         print('Both doors are the same object and they are on the East and West side of the two rooms.')
 
     ##########################################################################################################
-    print('*' * 21)
-    print('*** The Maze Game ***')
-    print('*' * 21)
+    def play_game(aFactory, num_of_stars=44, explode_bomb=False):
+        print('\n')
+        print('*' * num_of_stars)
+        print('*** The Maze Game ***')
+        print('*' * num_of_stars)
+            
+        factory = aFactory
+        print(factory)
+        print('=' * num_of_stars)
+        
+        maze_obj = MazeGame().CreateMaze(factory)
+        find_maze_rooms(maze_obj)     
     
-    # Creating the original Maze passing it in as a Factory
-    factory = MazeFactory         # Pass in class directly
-#   factory = MazeFactory()       # Pass in instance of class
-    print(factory)
-    
-    maze_obj = MazeGame().CreateMaze(factory)
-    find_maze_rooms(maze_obj)
-
-
+        if explode_bomb:
+            print('\n*** Bomb exploded - walls are damaged! ***')
+            maze_obj._rooms[1].bomb_exploded = True
+            for side in range(4):
+                cur_side = maze_obj._rooms[1]._sides[side]
+                if 'BombedWall' in str(cur_side):
+                    cur_side.wall_is_damaged = True
+                    print('Wall is damaged:', cur_side, cur_side.wall_is_damaged)
+            
+    ############################################
+    play_game(MazeFactory)              # pass in class directly
+    play_game(MazeFactory())            # pass in instance of class
+    play_game(EnchantedMazeFactory)
+    play_game(BombedMazeFactory)
+    play_game(BombedMazeFactory, explode_bomb=True)
