@@ -44,7 +44,6 @@ class Door(MapSite):
         self._room2 = Room2
         self._isOpen = False
         
-    # Figures out what Room is on the other side of the Door.
     def OtherSideFrom(self, Room):
         print('\tDoor obj: This door is a side of Room: {}'.format(Room._roomNumber))
         if 1 == Room._roomNumber: 
@@ -69,78 +68,104 @@ class Maze():
     def RoomNo(self, room_number):
         return self._rooms[room_number]
     
-class MazeGame():
-    def CreateMaze(self):
-        aMaze = Maze()
-        r1 = Room(1)
-        r2 = Room(2)
-        # Doors require two rooms as arguments.
-        theDoor = Door(r1, r2)
+# Using the abstract factory design pattern now enables
+# the program to easily create different kinds of mazes.
+    
+# Note: Does not instantiate the class, 
+# instead, just uses the class to call those methods, 
+# and those methods will create our factory.
+class MazeFactory():   
+    @classmethod            # decorator
+    def MakeMaze(cls):      # cls, not self
+        return Maze()       # return Maze instance 
+    
+    @classmethod            # decorator
+    def MakeWall(cls):
+        return Wall()
+    
+    @classmethod            # decorator
+    def MakeRoom(cls, n):   # n = roomNumber
+        return Room(n)
+        
+    @classmethod            # decorator
+    def MakeDoor(cls, r1, r2):
+        return Door(r1, r2)
+    
+    
+class MazeGame():   
+    # Abstract Factory
+    def CreateMaze(self, factory=MazeFactory):
+        aMaze = factory.MakeMaze()
+        r1 = factory.MakeRoom(1)
+        r2 = factory.MakeRoom(2)
+        aDoor = factory.MakeDoor(r1, r2)
         
         aMaze.AddRoom(r1)
         aMaze.AddRoom(r2)
         
-        r1.SetSide(Direction.North.value, Wall())
-        r1.SetSide(Direction.East.value, theDoor)
-        r1.SetSide(Direction.South.value, Wall())
-        r1.SetSide(Direction.West.value, Wall())
+        r1.SetSide(Direction.North.value, factory.MakeWall())
+        r1.SetSide(Direction.East.value, aDoor)
+        r1.SetSide(Direction.South.value, factory.MakeWall())
+        r1.SetSide(Direction.West.value, factory.MakeWall())
         
-        r2.SetSide(Direction(0).value, Wall())
-        r2.SetSide(Direction(1).value, Wall())
-        r2.SetSide(Direction(2).value, Wall())
-        r2.SetSide(Direction(3).value, theDoor)
+        r2.SetSide(Direction(0).value, factory.MakeWall())
+        r2.SetSide(Direction(1).value, factory.MakeWall())
+        r2.SetSide(Direction(2).value, factory.MakeWall())
+        r2.SetSide(Direction(3).value, aDoor)
         
         return aMaze
-        
-
-#===================================================
-# Self-testing Section    
-#===================================================
-if __name__ == '__main__':
-#     map_site_inst = MapSite()
-#     map_site_inst.Enter()
     
+#==================================================================
+# Self-testing Section    
+#==================================================================
+if __name__ == '__main__':
+    # Common code moved into function
+    def find_maze_rooms(maze_obj):      # pass object into function
+        # Find its rooms
+        maze_rooms = []
+        for room_number in range(5):
+            try: 
+                # Get the room number
+                room = maze_obj.RoomNo(room_number)
+                print('\n^^^ Maze has room: {}'.format(room_number, room))
+                print('    Entering the room...')
+                room.Enter()
+                # Append rooms to list
+                maze_rooms.append(room)
+                for idx in range(4):
+                    side = room.GetSide(idx) 
+                    side_str = str(side.__class__).replace("<class '__main__.", "").replace("'>", "")  
+                    print('    Room: {}, {:<15s}, Type: {}'.format(room_number, Direction(idx), side_str))
+                    print('    Trying to enter: ', Direction(idx))
+                    side.Enter()
+                    if 'Door' in side_str:
+                        door = side                    
+                        if not door._isOpen:
+                            print('    *** Opening the door...')
+                            door._isOpen = True
+                            door.Enter()
+                        print('\t', door)                    
+                        # Get the room on the other side of the door
+                        other_room = door.OtherSideFrom(room)
+                        print('\tOn the other side of the door is Room: {}\n'.format(other_room._roomNumber))                    
+                
+            except KeyError:
+                print('No room:', room_number)
+        num_of_rooms = len(maze_rooms)
+        print('\nThere are {} rooms in the Maze.'.format(num_of_rooms))       
+        print('Both doors are the same object and they are on the East and West side of the two rooms.')
+
+    ##########################################################################################################
     print('*' * 21)
     print('*** The Maze Game ***')
     print('*' * 21)
     
-    # Create the Maze
-    maze_obj = MazeGame().CreateMaze()
-
-    # Find the maze rooms
-    maze_rooms = []
-    for room_number in range(5):
-        try: 
-            # Get the room number
-            room = maze_obj.RoomNo(room_number)
-            print('\n^^^ Maze has room: {}'.format(room_number, room))
-            print('    Entering the room...')
-            room.Enter()
-            # Append rooms to list
-            maze_rooms.append(room)
-            # Room MUST have four sides
-            for idx in range(4):
-                side = room.GetSide(idx) 
-                side_str = str(side.__class__).replace("<class '__main__.", "").replace("'>", "")  
-                print('    Room: {}, {:<15s}, Type: {}'.format(room_number, Direction(idx), side_str))
-                print('    Trying to enter: ', Direction(idx))
-                # Attempt to open up one of the sides/walls
-                side.Enter()
-                if 'Door' in side_str:
-                    door = side                    
-                    if not door._isOpen:
-                        print('    *** Opening the door...')
-                        door._isOpen = True
-                        door.Enter()
-                    print('\t', door)                    
-                    # Get the room on the other side of the door
-                    other_room = door.OtherSideFrom(room)
-                    print('\tOn the other side of the door is Room: {}\n'.format(other_room._roomNumber))                    
-            
-        except KeyError:
-            print('No room:', room_number)
-    num_of_rooms = len(maze_rooms)
-    print('\nThere are {} rooms in the Maze.'.format(num_of_rooms))
+    # Creating the original Maze passing it in as a Factory
+    factory = MazeFactory         # Pass in class directly
+#   factory = MazeFactory()       # Pass in instance of class
+    print(factory)
     
-    print('Both doors are the same object and they are on the East and West side of the two rooms.')
+    maze_obj = MazeGame().CreateMaze(factory)
+    find_maze_rooms(maze_obj)
+
 
