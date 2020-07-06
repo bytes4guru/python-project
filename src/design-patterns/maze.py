@@ -24,9 +24,7 @@ class Room(MapSite):
     def __init__(self, roomNo):
         self._sides = [MapSite] * 4
         self._roomNumber = int(roomNo)
-        print('Room: ', self._roomNumber)
-        print('Room is of Type: ', self.__class__)
-                
+        
     def GetSide(self, Direction):
         return self._sides[Direction]
     
@@ -58,6 +56,7 @@ class Door(MapSite):
         if self._isOpen: print('    **** You have passed through this door...')
         else: print('    ** This door needs to be opened before you can pass through it...')
 
+
 class Maze():
     def __init__(self):
         # dictionary to hold room_number, room_obj <key, value> pairs
@@ -69,174 +68,169 @@ class Maze():
     
     def RoomNo(self, room_number):
         return self._rooms[room_number]
-    
-    
-class MazeFactory():   
-    @classmethod            # decorator
-    def MakeMaze(cls):      # cls, not self
-        return Maze()       # return Maze instance 
-    
-    @classmethod            # decorator
-    def MakeWall(cls):
-        return Wall()
-    
-    @classmethod            # decorator
-    def MakeRoom(cls, n):   # n = roomNumber
-        return Room(n)
-        
-    @classmethod                # decorator
-    def MakeDoor(cls, r1, r2):  # r1, r2 = two rooms
-        return Door(r1, r2)     # door between rooms
 
 
-# Extend MazeFactory
-class EnchantedMazeFactory(MazeFactory):        
-    @classmethod            # decorator
-    def MakeRoom(cls, n):   # n = roomNumber
-        return EnchantedRoom(n, cls.CastSpell())    # pass in roomNo, create a spell      
-        
-    @classmethod                # decorator
-    def MakeDoor(cls, r1, r2):  # r1, r2 = two rooms
-        return DoorNeedingSpell(r1, r2)     # door between rooms
-    
-    @classmethod
-    def CastSpell(cls):
-        return Spell()  
-    
-
-class EnchantedRoom(Room):
-    def __init__(self, roomNo, aSpell):
-        super(EnchantedRoom, self).__init__(roomNo)
-        print('The spell is: ', aSpell)
-        
-class Spell():    
-    def __repr__(self):                 # overwrite string representation
-        return '"A hard-coded spell"'
-
-class DoorNeedingSpell(Door):    
-    def __init__(self, r1, r2):
-        super(DoorNeedingSpell, self).__init__(r1, r2)
-        self.spell = Spell()
-
-    def Enter(self):
-        print('    + This door needs a Spell...', self.spell)
-        if self._isOpen: print('    **** You have passed through this door...')
-        else: print('    ** This door needs to be opened before you can pass through it...')
-
-    
-# Extend MazeFactory
-class BombedMazeFactory(MazeFactory):
-    @classmethod            # decorator
-    def MakeWall(cls): 
-        return BombedWall()
-       
-    @classmethod            # decorator
-    def MakeRoom(cls, n):   # n = roomNumber
-        return RoomWithABomb(n)    # pass in roomNo, create a spell
-
-
-class BombedWall(Wall):
+# interface
+class MazeBuilder():
     def __init__(self):
-        self.wall_is_damaged = False    # True if bomb exploded
-
-
-class RoomWithABomb(Room):
-    def __init__(self, roomNo):
-        super(RoomWithABomb, self).__init__(roomNo)
-        self.has_bomb = True
-        self.bomb_exploded = False
-        
-
-class MazeGame():   
-    # Abstract Factory
-    def CreateMaze(self, factory=MazeFactory):  # pass in a concrete Factory
-        aMaze = factory.MakeMaze()
-        r1 = factory.MakeRoom(1)
-        r2 = factory.MakeRoom(2)
-        aDoor = factory.MakeDoor(r1, r2)
-        
-        aMaze.AddRoom(r1)
-        aMaze.AddRoom(r2)
-        
-        r1.SetSide(Direction.North.value, factory.MakeWall())
-        r1.SetSide(Direction.East.value, aDoor)
-        r1.SetSide(Direction.South.value, factory.MakeWall())
-        r1.SetSide(Direction.West.value, factory.MakeWall())
-        
-        r2.SetSide(Direction(0).value, factory.MakeWall())
-        r2.SetSide(Direction(1).value, factory.MakeWall())
-        r2.SetSide(Direction(2).value, factory.MakeWall())
-        r2.SetSide(Direction(3).value, aDoor)
-        
-        return aMaze
+        pass                                # constructor-like initializer
     
+    def BuildMaze(self):                    # build a Maze
+        pass                                # empty, can be overwritten; not raising an exception
+    
+    def BuildRoom(self, room):              # build a Room with a number
+        pass                                # empty, can be overwritten
+    
+    def BuildDoor(self, roomFrom, roomTo):  # place a door between existing rooms
+        pass                                # empty, can be overwritten
+    
+    def GetMaze(self):                      # get the Maze
+        return None                         # overwrite to return a Maze
+    
+    
+class MazeGame():   
+    # Builder Design Pattern
+    def CreateMaze(self, builder):          # pass in a MazeBuilder
+        builder.BuildMaze()
+
+        builder.BuildRoom(1)
+        builder.BuildRoom(2)
+        builder.BuildDoor(1, 2)
+                                            # there is no BuildWall...                           
+        return builder.GetMaze()
+    
+    
+    def CreateComplexMaze(self, builder):   # pass in a MazeBuilder
+        builder.BuildRoom(1)
+        # ...
+        builder.BuildRoom(1001)             # 1,000 rooms, no doors, using same MazeBuilder interface
+        
+        return builder.GetMaze()
+
+    
+# C-like .h interface definition
+class Interface_StandardMazeBuilder(MazeBuilder):
+    def __init__(self): pass
+    
+    def BuildMaze(self): pass                            
+    def BuildRoom(self, n): pass        
+    def BuildDoor(self, roomFrom, roomTo): pass                                
+    
+    def GetMaze(self): return Maze
+  
+    # private      
+    def CommonWall(self, Room1, Room2): return Direction    
+    _currentMaze = Maze
+        
+
+# implementation        
+class StandardMazeBuilder(MazeBuilder):
+    def __init__(self):  
+        self._currentMaze = None                # member to hold a Maze
+    
+    def BuildMaze(self): 
+        self._currentMaze = Maze() 
+                                       
+    def BuildRoom(self, n): 
+        try: self._currentMaze.RoomNo(n)
+        except: 
+            print('Room {} does not exist - building this room.'.format(n))
+            room = Room(n)
+            self._currentMaze.AddRoom(room)
+            
+            room.SetSide(Direction.North.value, Wall())   # all sides are Walls
+            room.SetSide(Direction.South.value, Wall())
+            room.SetSide(Direction.East.value, Wall())
+            room.SetSide(Direction.West.value, Wall())
+            
+                                        
+    def BuildDoor(self, n1, n2):
+        r1 = self._currentMaze.RoomNo(n1)
+        r2 = self._currentMaze.RoomNo(n2) 
+        d = Door(r1, r2)
+        
+        r1.SetSide(self.CommonWall(r1, r2), d)  # Door replaces Wall
+        r2.SetSide(self.CommonWall(r2, r1), d)  # Door replaces Wall
+        
+        print()
+        for side in range(4):
+            if 'Door' in str(r1._sides[side]):
+                print('Room1: ', r1._sides[side], Direction(side))
+            if 'Door' in str(r2._sides[side]):
+                print('Room2: ', r2._sides[side], Direction(side))
+            
+    
+    def GetMaze(self):
+        return self._currentMaze                            
+          
+    def CommonWall(self, aRoom, anotherRoom):
+        # layout: room1, room2 etc. from left (West) to right (East)
+        if aRoom._roomNumber < anotherRoom._roomNumber:
+            return Direction.East.value       # other room on East
+        else:
+            return Direction.West.value       # other room on West
+    
+    
+# C-like .h interface definition
+class Interface_CountingMazeBuilder(MazeBuilder):
+    
+    def __init__(self): 
+        # private        
+        self._doors     # leading '_' is a naming convention for private
+        self._rooms
+    
+    def BuildMaze(self): pass                            
+    def BuildRoom(self, n): pass        
+    def BuildDoor(self, r1, r2): pass       
+    def AddWall(self, n, Direction): pass
+    
+    def GetCounts(self): return tuple()
+  
+
+# implementation        
+class CountingMazeBuilder(MazeBuilder):
+    def __init__(self):  
+        self._rooms = 0
+        self._doors = 0
+
+    def BuildRoom(self, n): 
+        self._rooms += 1
+        
+    def BuildDoor(self, r1, r2):
+        self._doors += 1    
+
+    def GetCounts(self): 
+        return self._rooms, self._doors
+
+
 #==================================================================
 # Self-testing section    
 #==================================================================
 if __name__ == '__main__':
-    # common code moved into function
-    def find_maze_rooms(maze_obj):      # pass object into function
-        print()
-        # find its rooms
-        maze_rooms = []
-        for room_number in range(5):
-            try: 
-                # get the room number
-                room = maze_obj.RoomNo(room_number)
-                print('\n^^^ Maze has room: {}'.format(room_number, room))
-                print('    Entering the room...')
-                room.Enter()
-                # append rooms to list
-                maze_rooms.append(room)
-                for idx in range(4):
-                    side = room.GetSide(idx) 
-                    side_str = str(side.__class__).replace("<class '__main__.", "").replace("'>", "")  
-                    print('    Room: {}, {:<15s}, Type: {}'.format(room_number, Direction(idx), side_str))
-                    print('    Trying to enter: ', Direction(idx))
-                    side.Enter()
-                    if 'Door' in side_str:
-                        door = side                    
-                        if not door._isOpen:
-                            print('    *** Opening the door...')
-                            door._isOpen = True
-                            door.Enter()
-                        print('\t', door)                    
-                        # get the room on the other side of the door
-                        other_room = door.OtherSideFrom(room)
-                        print('\tOn the other side of the door is Room: {}\n'.format(other_room._roomNumber))                    
-                
-            except KeyError:
-                print('No room:', room_number)
-        num_of_rooms = len(maze_rooms)
-        print('\nThere are {} rooms in the Maze.'.format(num_of_rooms))       
-        print('Both doors are the same object and they are on the East and West side of the two rooms.')
-
-    ##########################################################################################################
-    def play_game(aFactory, num_of_stars=44, explode_bomb=False):
-        print('\n')
-        print('*' * num_of_stars)
-        print('*** The Maze Game ***')
-        print('*' * num_of_stars)
-            
-        factory = aFactory
-        print(factory)
-        print('=' * num_of_stars)
-        
-        maze_obj = MazeGame().CreateMaze(factory)
-        find_maze_rooms(maze_obj)     
+    print('*' * 21)
+    print('*** The Maze Game ***')
+    print('*' * 21)
     
-        if explode_bomb:
-            print('\n*** Bomb exploded - walls are damaged! ***')
-            maze_obj._rooms[1].bomb_exploded = True
-            for side in range(4):
-                cur_side = maze_obj._rooms[1]._sides[side]
-                if 'BombedWall' in str(cur_side):
-                    cur_side.wall_is_damaged = True
-                    print('Wall is damaged:', cur_side, cur_side.wall_is_damaged)
-            
-    ############################################
-    play_game(MazeFactory)              # pass in class directly
-    play_game(MazeFactory())            # pass in instance of class
-    play_game(EnchantedMazeFactory)
-    play_game(BombedMazeFactory)
-    play_game(BombedMazeFactory, explode_bomb=True)
+    maze = Maze
+    game = MazeGame()
+    builder = StandardMazeBuilder()
+
+    game.CreateMaze(builder)
+    maze = builder.GetMaze()
+    
+       
+    print('\n' * 2)
+    print('*' * 21)
+    print('*** The Counting Maze Game ***')
+    print('*' * 21)
+     
+    game = MazeGame()
+    builder = CountingMazeBuilder()
+ 
+    game.CreateMaze(builder)
+    rooms, doors = builder.GetCounts()
+     
+    print('The maze has {} rooms and {} doors'.format(rooms, doors))
+     
+    
+    
