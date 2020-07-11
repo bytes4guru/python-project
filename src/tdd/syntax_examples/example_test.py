@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# example_test.py
+
 # Simple Unit Test Example
 
 import pytest

@@ -1,5 +1,9 @@
-# run: pytest -v -s
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 
+# setup_teardown_test.py
+
+# Note! run: pytest -v -s
 
 # Class Example #
 
@@ -7,6 +11,8 @@
 # have the @classmethod decorator applied, as they
 # are passed in the uninstantiated class object
 # rather than a unique instance of the class.
+
+import pytest
 
 class TestClass:
     @classmethod

@@ -1,3 +1,8 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+# fixtures_test.py
+
 import pytest
 
 @pytest.fixture()
@@ -54,7 +59,7 @@ def test5(setup3):
     assert True
 
 def test6(setup4):
-    print("Execute test6!")
+    print("Executing test6!")
     assert True
 
 # Scope Example
@@ -76,5 +81,5 @@ class TestClass:
         assert True
 
     def test8(self):
-        print("Execute test8!")
+        print("Executing test8!")
         assert True
