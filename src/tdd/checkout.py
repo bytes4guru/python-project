@@ -22,20 +22,24 @@ class Checkout:
             self.item_count = item_count
             self.price = price
 
-
     def __init__(self):
         self.prices = {}
         self.discounts = {}
         self.items = {}
-    
-    def addDiscount(self, item, item_count, price):
-        discount = self.Discount(item_count, price)
+
+
+    def addDiscount(self, item, number_of_items, price):
+        discount = self.Discount(number_of_items, price)
         self.discounts[item] = discount
+
 
     def addItemPrice(self, item, price):
         self.prices[item] = price
 
     def addItem(self, item):
+        if item not in self.prices:
+            raise Exception("Error! Item not priced!")
+
         if item in self.items:
             self.items[item] += 1
         else:
@@ -52,26 +56,26 @@ class Checkout:
             total += self.calculateItemTotal(item, count)
         return total
 
-    def calculateItemTotal(self, item, item_count):
+    def calculateItemTotal(self, item, count):
         total = 0
         # For each item in the items dictionary,
         # search in the discounts map to see 
         # if there's a discount for that item.
         if item in self.discounts:
             discount = self.discounts[item]
-            if item >= discount.item_count:
-                # If there is a discount, see if the number of items 
-                # added to the checkout are enough for the discount. 
-                discount_count = item_count / discount.item_count
-                # Multiply that number by the discounted price.
-                total += discount_count * discount.price
-                # Calculate how many of the items cannot be 
-                # applied to a discount using the modulus operator.
-                remainder = item_count % discount.item_count
-                # This number is multiplied by the normal item price 
-                # and added to the total.
-                total += remainder * self.prices[item]
+            if count >= discount.item_count:
+                total += self.calculateItemDiscountedTotal(item, count, discount)
             else:
-                total += self.prices[item] * item_count
+                total += self.prices[item] * count
+        else:
+            total += self.prices[item] * count
         
+        return total
+    
+    def calculateItemDiscountedTotal(self, item, count, discount):
+        total = 0
+        number_of_discounts = count / discount.item_count
+        total += number_of_discounts * discount.price
+        remaining = count % discount.item_count
+        total += remaining * self.prices[item]
         return total

@@ -23,7 +23,7 @@ def checkout():
     checkout = Checkout()
     checkout.addItemPrice("Apple", 1.25)
     checkout.addItemPrice("Carrot", 2.25)
-
+    checkout.addItemPrice("Figs", 3.50)
     return checkout
 
 def test_CanAddItemPrice(checkout):
@@ -40,8 +40,13 @@ def test_GetCorrectTotalWithMultipleItems(checkout):
     assert checkout.calculateTotal() == 3.50
 
 def test_CanAddDiscountRule(checkout):
+    checkout.addItem("Figs")
+    checkout.addItem("Figs")
+    checkout.addItem("Figs")
     checkout.addDiscount("Figs", 3, 5.50)
-    checkout.addItem("Figs")
-    checkout.addItem("Figs")
-    checkout.addItem("Figs")
     assert checkout.calculateTotal() == 5.50
+
+def test_ExceptionWithBadItem(checkout):
+    with pytest.raises(Exception):
+        checkout.addItem("Oranges")
+    assert True
