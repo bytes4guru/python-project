@@ -57,27 +57,27 @@ menu_bar.add_cascade(
 tab_control = ttk.Notebook(win)         # Create Tab Control
 
 tab_1 = ttk.Frame(tab_control)          # Create 1st Tab
-tab_control.add(tab_1, text="Tab 1")  # Add 1st Tab
+tab_control.add(tab_1, text="Tab 1")    # Add 1st Tab
 tab_2 = ttk.Frame(tab_control)          # Create 2nd Tab
-tab_control.add(tab_2, text="Tab 2")  # Add 2nd Tab
+tab_control.add(tab_2, text="Tab 2")   # Add 2nd Tab
 
 tab_control.pack(expand=1, fill="both")
 # ---------------------
 
 # Container frame to hold all other widgets:
-x_frame = ttk.LabelFrame(tab_1, text=' Test Frame 1 ')
+test_frame = ttk.LabelFrame(tab_1, text=' Test Frame 1 ')
 
 # Tkinter grid layout manager:
-x_frame.grid(column=0, row=0, padx=8, pady=4)
+test_frame.grid(column=0, row=0, padx=8, pady=4)
 
 # Adding a label:
-ttk.Label(x_frame, text="Label: ").grid(
+ttk.Label(test_frame, text="LABEL: ").grid(
     column=0, row=0, sticky='W')
 # ---------------------
 
 test_label = tk.StringVar()
 test_selected = ttk.Combobox(
-    x_frame, width=12, textvariable=test_label)
+    test_frame, width=12, textvariable=test_label)
 # Create dictionary of values:
 test_selected['values'] = ('Selection 1', 'Selection 2', 'Selection 3')
 test_selected.grid(column=1, row=0)
@@ -97,28 +97,40 @@ ENTRY_WIDTH = max_width + 3
 # Textbox Entry Widgets
 #==========================
 
-ttk.Label(x_frame, text="Last Updated: ").grid(column=0, row=1, sticky='E')
+ttk.Label(test_frame, text="Last Updated: ").grid(
+    column=0, 
+    row=1, 
+    sticky='E')
 updated = tk.StringVar()
-updated_entry = ttk.Entry(x_frame, width=ENTRY_WIDTH, textvariable=updated, state='readonly')
-updated_entry.grid(column=1, row=1, sticky='W')
+updated_entry = ttk.Entry(
+    test_frame, 
+    width=ENTRY_WIDTH, 
+    textvariable=updated, 
+    state='readonly')
+updated_entry.grid(
+    column=1,
+    row=1,
+    sticky='W')
 
-ttk.Label(x_frame, text="Weather: ").grid(
+ttk.Label(test_frame, text="Weather: ").grid(
     column=0, row=2, sticky='E')
 weather = tk.StringVar()
 weather_entry = ttk.Entry(
-    x_frame, width=ENTRY_WIDTH,
+    test_frame, 
+    width=ENTRY_WIDTH,
     textvariable=weather,
     state='readonly')
-updated_entry.grid(
+weather_entry.grid(
     column=1,
     row=2,
     sticky='W')
 
-ttk.Label(x_frame, text="Temperature ").grid(
+ttk.Label(test_frame, text="Temperature: ").grid(
     column=0, row=3, sticky='E')
 temperature = tk.StringVar()
 temperature_entry = ttk.Entry(
-    x_frame, width=ENTRY_WIDTH,
+    test_frame, 
+    width=ENTRY_WIDTH,
     textvariable=temperature,
     state='readonly')
 temperature_entry.grid(
@@ -126,11 +138,12 @@ temperature_entry.grid(
     row=3,
     sticky='W')
 
-ttk.Label(x_frame, text="Dew Point: ").grid(
+ttk.Label(test_frame, text="Dew Point: ").grid(
     column=0, row=4, sticky='E')
 dew_point = tk.StringVar()
 dew_point_entry = ttk.Entry(
-    x_frame, width=ENTRY_WIDTH,
+    test_frame, 
+    width=ENTRY_WIDTH,
     textvariable=dew_point,
     state='readonly')
 dew_point_entry.grid(
@@ -138,11 +151,12 @@ dew_point_entry.grid(
     row=4,
     sticky='W')
 
-ttk.Label(x_frame, text="Relative Humidity: ").grid(
+ttk.Label(test_frame, text="Relative Humidity: ").grid(
     column=0, row=5, sticky='E')
 humidity = tk.StringVar()
 humidity_entry = ttk.Entry(
-    x_frame, width=ENTRY_WIDTH,
+    test_frame, 
+    width=ENTRY_WIDTH,
     textvariable=humidity,
     state='readonly')
 humidity_entry.grid(
@@ -151,7 +165,7 @@ humidity_entry.grid(
     sticky='W')
 
 # Spacing around labels:
-for child in x_frame.winfo_children():
+for child in test_frame.winfo_children():
     child.grid_configure(padx=4, pady=2)
 
 #============
