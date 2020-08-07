@@ -9,10 +9,12 @@ Created on Aug 7, 2020
 import tkinter as tk
 from tkinter import Menu
 from tkinter import ttk
+from tkinter import scrolledtext
 
 import urllib.request
 import xml.etree.ElementTree as ET
 
+from html.parser import HTMLParser
 
 #============
 # FUNCTIONS
@@ -57,26 +59,31 @@ menu_bar.add_cascade(
 # ---------------------
 
 # Tab Control / Notebook
-tab_control = ttk.Notebook(win)         # Create Tab Control
-
-tab_1 = ttk.Frame(tab_control)          # Create 1st Tab
-tab_control.add(tab_1, text="Tab 1")    # Add 1st Tab
-tab_2 = ttk.Frame(tab_control)          # Create 2nd Tab
-tab_control.add(tab_2, text="Tab 2")    # Add 2nd Tab
+tab_control = ttk.Notebook(win)           # Create Tab Control
+tab_1 = ttk.Frame(tab_control)            # Create 1st Tab
+tab_control.add(tab_1, text="Weather")    # Add 1st Tab
+tab_2 = ttk.Frame(tab_control)            # Create 2nd Tab
+tab_control.add(tab_2, text="Locations")  # Add 2nd Tab
 
 tab_control.pack(expand=1, fill="both")
 # ---------------------
 
 # Container frame to hold all other widgets:
-weather_frame = ttk.LabelFrame(tab_1, text=" Current Weather Conditions ")
+weather_frame = ttk.LabelFrame(
+    tab_1, text=" Current Weather Conditions ")
 
 # Tkinter grid layout manager:
-weather_frame.grid(column=0, row=0, padx=8, pady=4)
-weather_frame.grid_configure(column=0, row=1, padx=8, pady=4)
+weather_frame.grid(
+    column=0, row=0, padx=8, pady=4)
+weather_frame.grid_configure(
+    column=0, row=1, padx=8, pady=4)
 
-weather_cities_frame = ttk.LabelFrame(tab_1, text=" Latest Observation for ")
-weather_cities_frame.grid(column=0, row=0, padx=8, pady=4)
-ttk.Label(weather_cities_frame, text="Weather Station ID: ").grid(column=0, row=0)
+weather_cities_frame = ttk.LabelFrame(
+    tab_1, text=" Latest Observation for ")
+weather_cities_frame.grid(
+    column=0, row=0, padx=8, pady=4)
+ttk.Label(
+    weather_cities_frame, text="Weather Station ID: ").grid(column=0, row=0)
 
 #==========================
 ENTRY_WIDTH = 22
@@ -222,7 +229,10 @@ for child in weather_frame.winfo_children():
 #========================================================
 
 station_id = tk.StringVar()
-station_id_combo = ttk.Combobox(weather_cities_frame, width=6, textvariable=station_id)        
+station_id_combo = ttk.Combobox(
+    weather_cities_frame,
+    width=6,
+    textvariable=station_id)
 station_id_combo["values"] = ("KLAX", "KDEN", "KNYC")
 station_id_combo.grid(column=1, row=0)
 station_id_combo.current(0)
@@ -232,13 +242,19 @@ def _get_station():
     get_weather_data(station)
     populate_gui()
 
-get_weather_btn = ttk.Button(weather_cities_frame,text="Get Weather", command=_get_station).grid(column=2, row=0)
+get_weather_btn = ttk.Button(
+    weather_cities_frame,
+    text="Get Weather",
+    command=_get_station).grid(column=2, row=0)
 
 # Station City label
 location = tk.StringVar()
-ttk.Label(weather_cities_frame, textvariable=location).grid(column=0, row=1, columnspan=3)
-for child in weather_cities_frame.winfo_children(): 
-    child.grid_configure(padx=5, pady=4)    
+ttk.Label(weather_cities_frame, textvariable=location).grid(
+    column=0,
+    row=1,
+    columnspan=3)
+for child in weather_cities_frame.winfo_children():
+    child.grid_configure(padx=5, pady=4)
 
 WEATHER_DATA = {
     "observation_time": "",
@@ -255,7 +271,7 @@ WEATHER_DATA = {
     "location": ""
 }
 
-def get_weather_data(station_id="KLAX"):
+def get_weather_data(station_id):
     url_general = "http://www.weather.gov/xml/current_obs/{}.xml"
     url = url_general.format(station_id)
     print(url)
@@ -270,17 +286,100 @@ def get_weather_data(station_id="KLAX"):
     for data_point in WEATHER_DATA.keys():
         WEATHER_DATA[data_point] = xml_root.find(data_point).text
 
-def populate_gui():       
+def populate_gui():
     location.set(WEATHER_DATA["location"])
     updated.set(WEATHER_DATA["observation_time"].replace("Last Updated on ", ""))
     weather_desc.set(WEATHER_DATA["weather"])
-    temperature.set("{} \xb0F  ({} \xb0C)".format(WEATHER_DATA["temp_f"], WEATHER_DATA["temp_c"]))
-    dew_point.set("{} \xb0F  ({} \xb0C)".format(WEATHER_DATA["dewpoint_f"], WEATHER_DATA["dewpoint_c"]))
+    temperature.set("{} \xb0F  ({} \xb0C)".format(
+        WEATHER_DATA["temp_f"],
+        WEATHER_DATA["temp_c"]))
+    dew_point.set("{} \xb0F  ({} \xb0C)".format(
+        WEATHER_DATA["dewpoint_f"],
+        WEATHER_DATA["dewpoint_c"]))
     humidity.set(WEATHER_DATA["relative_humidity"] + " %")
     wind.set(WEATHER_DATA["wind_string"])
     visibility.set(WEATHER_DATA["visibility_mi"] + " miles")
     pressure.set(WEATHER_DATA["pressure_string"])
-    altimeter.set(WEATHER_DATA["pressure_in"] + " in Hg")     
+    altimeter.set(WEATHER_DATA["pressure_in"] + " in Hg")
+
+
+#==============
+# STATION DATA
+#==============
+
+weather_states_frame = ttk.LabelFrame(tab_2, text=" Weather Station IDs ")
+weather_states_frame.grid(column=0, row=0, padx=8, pady=4)
+ttk.Label(weather_states_frame, text="Select a State: ").grid(column=0, row=0)
+
+state = tk.StringVar()
+state_combo = ttk.Combobox(weather_states_frame, width=5, textvariable=state)
+state_combo["values"] = (
+    "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI",
+    "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI",
+    "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC",
+    "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT",
+    "VT", "VA", "WA", "WV", "WI", "WY")
+
+state_combo.grid(column=1, row=0)
+state_combo.current(0)
+
+def _get_cities():
+    state = state_combo.get()
+    get_city_station_ids(state)
+
+get_weather_btn = ttk.Button(
+    weather_states_frame,
+    text="Get Cities",
+    command=_get_cities).grid(column=2, row=0)
+
+scroll = scrolledtext.ScrolledText(
+    weather_states_frame,
+    width=38,
+    height=17,
+    wrap=tk.WORD)
+scroll.grid(column=0, row=1, columnspan=3)
+
+for child in weather_states_frame.winfo_children():
+    child.grid_configure(padx=6, pady=6)
+
+def get_city_station_ids(state):
+    url_general = "http://w1.weather.gov/xml/current_obs/seek.php?state={}&Find=Find"
+    state = state.lower()
+    url = url_general.format(state)
+    request = urllib.request.urlopen(url)
+    content = request.read().decode()
+    parser = WeatherHTMLParser()
+    parser.feed(content)
+
+    # Verify amount of stations vs. cities
+    print(len(parser.stations) == len(parser.cities))
+    # Clear scrolledText widget for next btn click
+    scroll.delete("1.0", tk.END)
+
+    for idx in range(len(parser.stations)):
+        city_station = parser.cities[idx] + " (" + parser.stations[idx] + ")"
+        print(city_station)
+        scroll.insert(tk.INSERT, city_station + "\n")
+
+class WeatherHTMLParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.stations = []
+        self.cities = []
+        self.grab_data = False
+
+    def handle_starttag(self, tag, attrs):
+        for attr in attrs:
+            if "display.php?stid=" in str(attr):
+                cleaned_attr = str(attr).replace("('href', 'display.php?stid=", '').replace("')", '')
+                self.stations.append(cleaned_attr)
+                self.grab_data = True
+
+    def handle_data(self, data):
+        if self.grab_data:
+            self.cities.append(data)
+            self.grab_data = False
+
 
 
 #============
