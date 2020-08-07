@@ -10,6 +10,9 @@ import tkinter as tk
 from tkinter import Menu
 from tkinter import ttk
 
+import urllib.request
+import xml.etree.ElementTree as ET
+
 
 #============
 # FUNCTIONS
@@ -71,31 +74,12 @@ weather_frame = ttk.LabelFrame(tab_1, text=" Current Weather Conditions ")
 weather_frame.grid(column=0, row=0, padx=8, pady=4)
 weather_frame.grid_configure(column=0, row=1, padx=8, pady=4)
 
-weather_cities_frame = ttk.LabelFrame(tab_1, text=" Latest Observations for: ")
+weather_cities_frame = ttk.LabelFrame(tab_1, text=" Latest Observation for ")
 weather_cities_frame.grid(column=0, row=0, padx=8, pady=4)
-ttk.Label(weather_cities_frame, text="Location:      ").grid(column=0, row=0)
-
-city = tk.StringVar()
-city_selected = ttk.Combobox(
-    weather_cities_frame,
-    width=24,
-    textvariable=city)
-city_selected["values"] = (
-    "Los Angeles, CA",
-    "Toronto, ON",
-    "Rio de Janeiro, Brazil")
-city_selected.grid(column=1, row=0)
-city_selected.current(0)
-
-for child in weather_cities_frame.winfo_children():
-    child.grid_configure(padx=6, pady=6)
-
-max_width = max([len(x) for x in city_selected["values"]])
-new_width = max_width - 4
-city_selected.config(width=new_width)
+ttk.Label(weather_cities_frame, text="Weather Station ID: ").grid(column=0, row=0)
 
 #==========================
-ENTRY_WIDTH = max_width + 3
+ENTRY_WIDTH = 22
 #==========================
 # Adding Label and
 # Textbox Entry Widgets
@@ -237,52 +221,67 @@ for child in weather_frame.winfo_children():
 # NOAA (National Oceanic and Atmospheric Administration)
 #========================================================
 
+station_id = tk.StringVar()
+station_id_combo = ttk.Combobox(weather_cities_frame, width=6, textvariable=station_id)        
+station_id_combo["values"] = ("KLAX", "KDEN", "KNYC")
+station_id_combo.grid(column=1, row=0)
+station_id_combo.current(0)
+
+def _get_station():
+    station = station_id_combo.get()
+    get_weather_data(station)
+    populate_gui()
+
+get_weather_btn = ttk.Button(weather_cities_frame,text="Get Weather", command=_get_station).grid(column=2, row=0)
+
+# Station City label
+location = tk.StringVar()
+ttk.Label(weather_cities_frame, textvariable=location).grid(column=0, row=1, columnspan=3)
+for child in weather_cities_frame.winfo_children(): 
+    child.grid_configure(padx=5, pady=4)    
+
 WEATHER_DATA = {
-    "dewpoint_c": "16.7",
-    "dewpoint_f": "62.1",
-    "dewpoint_string": "62.1 F (16.7 C)",
-    "icon_url_base": "http://forecast.weather.gov/images/wtf/small/",
-    "icon_url_name": "nsct.png",
-    "latitude": "33.93806",
-    "location": "Los Angeles, Los Angelesalti International Airport, CA",
-    "longitude": "-118.38889",
-    "ob_url": "http://www.weather.gov/data/METAR/KLAX.1.txt",
-    "observation_time": "Last Updated on Aug 7 2016, 9:53 pm PDT",
-    "observation_time_rfc822": "Sun, 07 Aug 2016 21:53:00 -0700",
-    "pressure_in": "29.81",
-    "pressure_mb": "1009.1",
-    "pressure_string": "1009.1 mb",
-    "relative_humidity": "84",
-    "station_id": "KLAX",
-    "suggested_pickup": "15 minutes after the hour",
-    "suggested_pickup_period": "60",
-    "temp_c": "19.4",
-    "temp_f": "67.0",
-    "temperature_string": "67.0 F (19.4 C)",
-    "two_day_history_url": "http://www.weather.gov/data/obhistory/KLAX.html",
-    "visibility_mi": "9.00",
-    "weather": "Partly Cloudy",
-    "wind_degrees": "250",
-    "wind_dir": "West",
-    "wind_mph": "6.9",
-    "wind_string": "West at 6.9 MPH (6 KT)"
+    "observation_time": "",
+    "weather": "",
+    "temp_f":  "",
+    "temp_c":  "",
+    "dewpoint_f": "",
+    "dewpoint_c": "",
+    "relative_humidity": "",
+    "wind_string":   "",
+    "visibility_mi": "",
+    "pressure_string": "",
+    "pressure_in": "",
+    "location": ""
 }
 
-UPDATED_DATA = WEATHER_DATA["observation_time"].replace("Last Updated on ", "")
-updated.set(UPDATED_DATA)
+def get_weather_data(station_id="KLAX"):
+    url_general = "http://www.weather.gov/xml/current_obs/{}.xml"
+    url = url_general.format(station_id)
+    print(url)
+    request = urllib.request.urlopen(url)
+    content = request.read().decode()
+    print(content)
 
-weather_desc.set(WEATHER_DATA["weather"])
-temperature.set("{} \xb0F  ({} \xb0C)".format(
-    WEATHER_DATA["temp_f"], 
-    WEATHER_DATA["temp_c"]))
-dew_point.set("{} \xb0F  ({} \xb0C)".format(
-    WEATHER_DATA["dewpoint_f"], 
-    WEATHER_DATA["dewpoint_c"]))
-humidity.set(WEATHER_DATA["relative_humidity"] + " %")
-wind.set(WEATHER_DATA["wind_string"])
-visibility.set(WEATHER_DATA["visibility_mi"] + " miles")
-pressure.set(WEATHER_DATA["pressure_string"])
-altimeter.set(WEATHER_DATA["pressure_in"] + " in Hg")
+    # Using ElementTree to retreive specific tags from .XML
+    xml_root = ET.fromstring(content)
+    print("xml_root: {}\n".format(xml_root.tag))
+
+    for data_point in WEATHER_DATA.keys():
+        WEATHER_DATA[data_point] = xml_root.find(data_point).text
+
+def populate_gui():       
+    location.set(WEATHER_DATA["location"])
+    updated.set(WEATHER_DATA["observation_time"].replace("Last Updated on ", ""))
+    weather_desc.set(WEATHER_DATA["weather"])
+    temperature.set("{} \xb0F  ({} \xb0C)".format(WEATHER_DATA["temp_f"], WEATHER_DATA["temp_c"]))
+    dew_point.set("{} \xb0F  ({} \xb0C)".format(WEATHER_DATA["dewpoint_f"], WEATHER_DATA["dewpoint_c"]))
+    humidity.set(WEATHER_DATA["relative_humidity"] + " %")
+    wind.set(WEATHER_DATA["wind_string"])
+    visibility.set(WEATHER_DATA["visibility_mi"] + " miles")
+    pressure.set(WEATHER_DATA["pressure_string"])
+    altimeter.set(WEATHER_DATA["pressure_in"] + " in Hg")     
+
 
 #============
 # START GUI
