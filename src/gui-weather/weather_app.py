@@ -1,5 +1,5 @@
 """
-Created on Aug 7, 2020
+Created on Aug 13, 2020
 @author: Brennan Brown
 """
 
@@ -60,10 +60,12 @@ menu_bar.add_cascade(
 
 # Tab Control / Notebook
 tab_control = ttk.Notebook(win)           # Create Tab Control
-tab_1 = ttk.Frame(tab_control)            # Create 1st Tab
+tab_1 = ttk.Frame(tab_control)
 tab_control.add(tab_1, text="Weather")    # Add 1st Tab
-tab_2 = ttk.Frame(tab_control)            # Create 2nd Tab
+tab_2 = ttk.Frame(tab_control)
 tab_control.add(tab_2, text="Locations")  # Add 2nd Tab
+tab_3 = ttk.Frame(tab_control)
+tab_control.add(tab_3, text="Images")     # Add 3rd Tab
 
 tab_control.pack(expand=1, fill="both")
 # ---------------------
@@ -343,6 +345,7 @@ for child in weather_states_frame.winfo_children():
     child.grid_configure(padx=6, pady=6)
 
 def get_city_station_ids(state):
+    # Retrieves HTML, not XML
     url_general = "http://w1.weather.gov/xml/current_obs/seek.php?state={}&Find=Find"
     state = state.lower()
     url = url_general.format(state)
@@ -380,6 +383,31 @@ class WeatherHTMLParser(HTMLParser):
             self.cities.append(data)
             self.grab_data = False
 
+
+#========
+# IMAGES
+#========
+
+# We are creating a container frame to hold all other widgets
+weather_images_frame = ttk.LabelFrame(tab_3, text=' Weather Images ')
+weather_images_frame.grid(column=0, row=0, padx=8, pady=4)        
+
+# ---------------------------------------------------------------
+# requires Pillow (PIL in Python 2.x)
+import PIL.Image
+import PIL.ImageTk
+
+im = PIL.Image.open("few_clouds.png")
+photo = PIL.ImageTk.PhotoImage(im)
+ttk.Label(weather_images_frame, image=photo).grid(column=0, row=0) 
+
+im = PIL.Image.open("night_few_clouds.png")
+photo1 = PIL.ImageTk.PhotoImage(im)
+ttk.Label(weather_images_frame, image=photo1).grid(column=1, row=0) 
+
+im = PIL.Image.open("night_fair.png")
+photo2 = PIL.ImageTk.PhotoImage(im)
+ttk.Label(weather_images_frame, image=photo2).grid(column=2, row=0) 
 
 
 #============
