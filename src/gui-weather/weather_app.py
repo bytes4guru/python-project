@@ -6,15 +6,27 @@ Created on Aug 13, 2020
 #===========
 # IMPORTS
 #===========
+from API_key import OWM_API_KEY
+
+from datetime import datetime
+
 import tkinter as tk
 from tkinter import Menu
 from tkinter import ttk
 from tkinter import scrolledtext
 
 import urllib.request
+from urllib.request import urlopen
 import xml.etree.ElementTree as ET
 
 from html.parser import HTMLParser
+
+import PIL.Image
+import PIL.ImageTk
+
+from pprint import pprint
+
+import json
 
 #============
 # FUNCTIONS
@@ -59,13 +71,15 @@ menu_bar.add_cascade(
 # ---------------------
 
 # Tab Control / Notebook
-tab_control = ttk.Notebook(win)           # Create Tab Control
+tab_control = ttk.Notebook(win)
 tab_1 = ttk.Frame(tab_control)
-tab_control.add(tab_1, text="Weather")    # Add 1st Tab
+tab_control.add(tab_1, text="NOAA")
 tab_2 = ttk.Frame(tab_control)
-tab_control.add(tab_2, text="Locations")  # Add 2nd Tab
+tab_control.add(tab_2, text="Station Lookup")
 tab_3 = ttk.Frame(tab_control)
-tab_control.add(tab_3, text="Images")     # Add 3rd Tab
+tab_control.add(tab_3, text="Images")
+tab_4 = ttk.Frame(tab_control)
+tab_control.add(tab_4, text="OpenWeather")
 
 tab_control.pack(expand=1, fill="both")
 # ---------------------
@@ -388,26 +402,275 @@ class WeatherHTMLParser(HTMLParser):
 # IMAGES
 #========
 
-# We are creating a container frame to hold all other widgets
 weather_images_frame = ttk.LabelFrame(tab_3, text=' Weather Images ')
-weather_images_frame.grid(column=0, row=0, padx=8, pady=4)        
+weather_images_frame.grid(column=0, row=0, padx=8, pady=4)
 
-# ---------------------------------------------------------------
-# requires Pillow (PIL in Python 2.x)
-import PIL.Image
-import PIL.ImageTk
+img = PIL.Image.open("few_clouds.png")
+photo = PIL.ImageTk.PhotoImage(img)
+ttk.Label(weather_images_frame, image=photo).grid(column=0, row=0)
 
-im = PIL.Image.open("few_clouds.png")
-photo = PIL.ImageTk.PhotoImage(im)
-ttk.Label(weather_images_frame, image=photo).grid(column=0, row=0) 
+img = PIL.Image.open("night_few_clouds.png")
+photo1 = PIL.ImageTk.PhotoImage(img)
+ttk.Label(weather_images_frame, image=photo1).grid(column=1, row=0)
 
-im = PIL.Image.open("night_few_clouds.png")
-photo1 = PIL.ImageTk.PhotoImage(im)
-ttk.Label(weather_images_frame, image=photo1).grid(column=1, row=0) 
+img = PIL.Image.open("night_fair.png")
+photo2 = PIL.ImageTk.PhotoImage(img)
+ttk.Label(weather_images_frame, image=photo2).grid(column=2, row=0)
 
-im = PIL.Image.open("night_fair.png")
-photo2 = PIL.ImageTk.PhotoImage(im)
-ttk.Label(weather_images_frame, image=photo2).grid(column=2, row=0) 
+
+#====================
+# OpenWeatherMap API
+#====================
+
+open_weather_cities_frame = ttk.LabelFrame(tab_4, text=' Latest Observation for ')
+open_weather_cities_frame.grid(column=0, row=0, padx=8, pady=4)
+
+open_location = tk.StringVar()
+ttk.Label(open_weather_cities_frame, textvariable=open_location).grid(column=0, row=1, columnspan=3)
+
+ttk.Label(open_weather_cities_frame, text="City: ").grid(column=0, row=0)
+
+open_city = tk.StringVar()
+open_city_combo = ttk.Combobox(open_weather_cities_frame, width=16, textvariable=open_city)
+open_city_combo['values'] = ('Los Angeles, US', 'London, UK', 'Paris, FR', 'Mumbai, IN', 'Beijing, CN')
+open_city_combo.grid(column=1, row=0)
+open_city_combo.current(0)
+
+def _get_station_open():
+    city = open_city_combo.get()
+    get_open_weather_data(city)
+get_weather_btn = ttk.Button(
+    open_weather_cities_frame,
+    text='Get Weather',
+    command=_get_station_open).grid(column=2, row=0)
+
+for child in open_weather_cities_frame.winfo_children():
+        child.grid_configure(padx=5, pady=2)
+
+open_frame = ttk.LabelFrame(tab_4, text=' Current Weather Conditions ')
+open_frame.grid(column=0, row=1, padx=8, pady=4)
+
+#================
+ENTRY_WIDTH = 25
+#================
+# Adding Label & Textbox Entry widgets
+#---------------------------------------------
+ttk.Label(open_frame, text="Last Updated:").grid(
+    column=0,
+    row=1,
+    sticky='E')
+open_updated = tk.StringVar()
+open_updatedEntry = ttk.Entry(
+    open_frame,
+    width=ENTRY_WIDTH,
+    textvariable=open_updated,
+    state='readonly')
+open_updatedEntry.grid(
+    column=1,
+    row=1,
+    sticky='W')
+
+ttk.Label(open_frame, text="Weather:").grid(
+    column=0,
+    row=2,
+    sticky='E')
+open_weather = tk.StringVar()
+open_weatherEntry = ttk.Entry(
+    open_frame,
+    width=ENTRY_WIDTH,
+    textvariable=open_weather,
+    state='readonly')
+open_weatherEntry.grid(
+    column=1,
+    row=2,
+    sticky='W')
+
+ttk.Label(open_frame, text="Temperature:").grid(
+    column=0,
+    row=3,
+    sticky='E')
+open_temp = tk.StringVar()
+open_tempEntry = ttk.Entry(
+    open_frame,
+    width=ENTRY_WIDTH,
+    textvariable=open_temp,
+    state='readonly')
+open_tempEntry.grid(
+    column=1,
+    row=3,
+    sticky='W')
+
+ttk.Label(open_frame, text="Relative Humidity:").grid(
+    column=0,
+    row=5,
+    sticky='E')
+open_rel_humi = tk.StringVar()
+open_rel_humiEntry = ttk.Entry(
+    open_frame,
+    width=ENTRY_WIDTH,
+    textvariable=open_rel_humi,
+    state='readonly')
+open_rel_humiEntry.grid(
+    column=1,
+    row=5,
+    sticky='W')
+
+ttk.Label(open_frame, text="Wind:").grid(
+    column=0,
+    row=6,
+    sticky='E')
+open_wind = tk.StringVar()
+open_windEntry = ttk.Entry(
+    open_frame,
+    width=ENTRY_WIDTH,
+    textvariable=open_wind,
+    state='readonly')
+open_windEntry.grid(
+    column=1,
+    row=6,
+    sticky='W')
+
+ttk.Label(open_frame, text="Visibility:").grid(
+    column=0,
+    row=7,
+    sticky='E')
+open_visi = tk.StringVar()
+open_visiEntry = ttk.Entry(
+    open_frame,
+    width=ENTRY_WIDTH,
+    textvariable=open_visi,
+    state='readonly')
+open_visiEntry.grid(
+    column=1,
+    row=7,
+    sticky='W')
+
+ttk.Label(open_frame, text="Pressure:").grid(
+    column=0,
+    row=8,
+    sticky='E')
+open_msl = tk.StringVar()
+open_mslEntry = ttk.Entry(
+    open_frame,
+    width=ENTRY_WIDTH,
+    textvariable=open_msl,
+    state='readonly')
+open_mslEntry.grid(
+    column=1,
+    row=8,
+    sticky='W')
+
+ttk.Label(open_frame, text="Sunrise:").grid(
+    column=0,
+    row=9,
+    sticky='E')
+sunrise = tk.StringVar()
+sunriseEntry = ttk.Entry(
+    open_frame,
+    width=ENTRY_WIDTH,
+    textvariable=sunrise,
+    state='readonly')
+sunriseEntry.grid(
+    column=1,
+    row=9,
+    sticky='E')
+
+ttk.Label(open_frame, text="Sunset:").grid(
+    column=0,
+    row=10,
+    sticky='E')
+sunset = tk.StringVar()
+sunsetEntry = ttk.Entry(
+    open_frame,
+    width=ENTRY_WIDTH,
+    textvariable=sunset,
+    state='readonly')
+sunsetEntry.grid(
+    column=1,
+    row=10,
+    sticky='E')
+
+for child in open_frame.winfo_children():
+        child.grid_configure(padx=4, pady=2)
+
+
+#================================
+# OpenWeatherMap Data Collection
+#================================
+
+def get_open_weather_data(city):
+    city = city.replace(' ', '%20')
+    url = "http://api.openweathermap.org/data/2.5/weather?q={}&appid={}".format(city, OWM_API_KEY)
+    response = urlopen(url)
+    data = response.read().decode()
+    json_data = json.loads(data)
+
+    pprint(json_data)
+
+    lastupdate_unix = json_data['dt']
+    humidity = json_data['main']['humidity']
+    pressure = json_data['main']['pressure']
+    temp_kelvin = json_data['main']['temp']
+    city_name = json_data['name']
+    city_country = json_data['sys']['country']
+    sunrise_unix = json_data['sys']['sunrise']
+    sunset_unix = json_data['sys']['sunset']
+    owm_weather = json_data['weather'][0]['description']
+    weather_icon = json_data['weather'][0]['icon']
+    wind_deg = json_data['wind']['deg']
+    wind_speed_meter_sec = json_data['wind']['speed']
+
+    try: visibility_meter = json_data['visibility']
+    except: visibility_meter = 'N/A'
+
+    def kelvin_to_celsius(temp_k):
+        return "{:.1f}".format(temp_k - 273.15)
+
+    def kelvin_to_fahrenheit(temp_k):
+        return "{:.1f}".format((temp_k - 273.15)* 1.8000 + 32.00)
+
+    def unix_to_datetime(unix_time):
+        return datetime.fromtimestamp(int(unix_time)
+        ).strftime('%Y-%m-%d %H:%M:%S')
+
+    def meter_to_miles(meter):
+        return "{:.2f}".format((meter * 0.00062137))
+
+    if visibility_meter is 'N/A':
+        visibility_miles = 'N/A'
+    else:
+        visibility_miles = meter_to_miles(visibility_meter)
+
+    def mps_to_mph(meter_second):
+        return "{:.1f}".format((meter_second * (2.23693629)))
+
+    # -------------------------------------------------------
+    # Update GUI entry widgets with live data
+    open_location.set('{}, {}'.format(city_name, city_country))
+
+    lastupdate = unix_to_datetime(lastupdate_unix)
+    open_updated.set(lastupdate)
+    open_weather.set(owm_weather)
+    temp_fahr = kelvin_to_fahrenheit(temp_kelvin)
+    temp_cels = kelvin_to_celsius(temp_kelvin)
+    open_temp.set('{} \xb0F  ({} \xb0C)'.format(temp_fahr, temp_cels))
+    open_rel_humi.set('{} %'.format(humidity))
+    wind_speed_mph = mps_to_mph(wind_speed_meter_sec)
+    open_wind.set('{} degrees at {} MPH'.format(wind_deg, wind_speed_mph))
+    open_visi.set('{} miles'.format(visibility_miles))
+    open_msl.set('{} hPa'.format(pressure))
+    sunrise_dt = unix_to_datetime(sunrise_unix)
+    sunrise.set(sunrise_dt)
+    sunset_dt = unix_to_datetime(sunset_unix)
+    sunset.set(sunset_dt)
+
+    print(weather_icon)
+    url_icon = "http://openweathermap.org/img/w/{}.png".format(weather_icon)
+    ico = urlopen(url_icon)
+    open_im = PIL.Image.open(ico)
+    open_photo = PIL.ImageTk.PhotoImage(open_im)
+    ttk.Label(open_weather_cities_frame, image=open_photo).grid(column=0, row=1)
+    win.update()
 
 
 #============
