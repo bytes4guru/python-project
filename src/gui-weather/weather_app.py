@@ -405,15 +405,15 @@ class WeatherHTMLParser(HTMLParser):
 weather_images_frame = ttk.LabelFrame(tab_3, text=' Weather Images ')
 weather_images_frame.grid(column=0, row=0, padx=8, pady=4)
 
-img = PIL.Image.open("few_clouds.png")
+img = PIL.Image.open("img/few_clouds.png")
 photo = PIL.ImageTk.PhotoImage(img)
 ttk.Label(weather_images_frame, image=photo).grid(column=0, row=0)
 
-img = PIL.Image.open("night_few_clouds.png")
+img = PIL.Image.open("img/night_few_clouds.png")
 photo1 = PIL.ImageTk.PhotoImage(img)
 ttk.Label(weather_images_frame, image=photo1).grid(column=1, row=0)
 
-img = PIL.Image.open("night_fair.png")
+img = PIL.Image.open("img/night_fair.png")
 photo2 = PIL.ImageTk.PhotoImage(img)
 ttk.Label(weather_images_frame, image=photo2).grid(column=2, row=0)
 
