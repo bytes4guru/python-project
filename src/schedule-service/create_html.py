@@ -36,5 +36,5 @@ def create_html_report(data_dict, icon_url, html_file):
 if __name__ == '__main__':
     from weather_data import get_weather_data
     weather_dict, icon = get_weather_data('KLAX')
-    create_html_report(weather_dict, icon, "weather_page.html")
+    create_html_report(weather_dict, icon, "email_weather.html")
 
